@@ -1,0 +1,10 @@
+MANIFEST.in
+README.rst
+setup.cfg
+setup.py
+opm_jenkins.egg-info/PKG-INFO
+opm_jenkins.egg-info/SOURCES.txt
+opm_jenkins.egg-info/dependency_links.txt
+opm_jenkins.egg-info/not-zip-safe
+opm_jenkins.egg-info/requires.txt
+opm_jenkins.egg-info/top_level.txt
