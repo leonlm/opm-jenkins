@@ -13,14 +13,14 @@ Downloading the source and running::
 
 Latest git version::
 
-    $ pip install -e git+git://github.com/leonlm/opm_jenkins.git#egg=opm_jenkins
+    $ pip install -e git+git://github.com/leonlm/opm-jenkins.git#egg=opm-jenkins
 
 
 
 Usage
 -----
 
-Add ``'opm_jenkins'`` to your ``INSTALLED_APPS`` list.
+Add ``'opm-jenkins'`` to your ``INSTALLED_APPS`` list.
 
 
 Settings
