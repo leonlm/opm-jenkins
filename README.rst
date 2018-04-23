@@ -1,4 +1,4 @@
-opm_jenkins
+opm-jenkins
 ==============
 
 Plug and play continuous integration with Django REST framework and Jenkins
