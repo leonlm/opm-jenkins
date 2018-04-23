@@ -20,7 +20,7 @@ Latest git version::
 Usage
 -----
 
-Add ``'opm-jenkins'`` to your ``INSTALLED_APPS`` list.
+Add ``'opm_jenkins'`` to your ``INSTALLED_APPS`` list.
 
 
 Settings
