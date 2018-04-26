@@ -9,6 +9,7 @@ from utils import (
     get_queryset,
     save
 )
+from tasks import jenkins_job
 
 
 class JenkinsJobViewSet(viewsets.ModelViewSet):
@@ -17,5 +18,12 @@ class JenkinsJobViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         retdict = save("create", request.data)
-        if retdict['status'] == 1 and retdict.has_key('instance'): retdict.pop('instance')
+        if retdict['status'] == 1 and retdict.has_key('instance'):
+            retdict.pop('instance')
+            jenkins_job.apply_async((request.data),
+                retry=True,
+                retry_policy={
+                    'max_retries': 3,
+                    'interval_start': 1,
+            })
         return JsonResponse(retdict, status=200)
