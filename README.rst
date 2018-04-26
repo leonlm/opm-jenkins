@@ -22,10 +22,27 @@ Usage
 
 Add ``'opm_jenkins'`` to your ``INSTALLED_APPS`` list.
 
+Add ``settings.py``
+
+- ``JENKINS_JOB``
+
+JENKINS_JOB = {
+    'job_name': 'job_name'
+    
+}
+
+- ``USER_ID``
+
+USER_ID = 'username'
+
+- ``API_TOKEN``
+
+API_TOKEN = 'Api Token'
+
+
 
 Settings
 --------
-
 
 
 Changelog
