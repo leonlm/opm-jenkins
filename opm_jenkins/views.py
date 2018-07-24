@@ -4,23 +4,29 @@ from django.shortcuts import render
 import django_filters
 from rest_framework import viewsets
 from django.http.response import JsonResponse
-from utils import (
-    get_serializer_class,
-    get_queryset,
-    save
-)
-from tasks import jenkins_job
+import json
+import utils
+import tasks
 
 
-class JenkinsJobViewSet(viewsets.ModelViewSet):
-    serializer_class = get_serializer_class()
-    queryset = get_queryset().objects.all()
+class JenkinsBuildLogViewSet(viewsets.ModelViewSet, utils.Utils):
+    def get_serializer_class(self):
+        return self.get_serializer_list()
+        
+    def get_queryset(self):
+        return self.get_model().objects.all()
+
+    def _format(self, request):
+        return {
+            'job_name': request.data['job_name'],
+            'parameters': json.dumps(request.data['parameters'])
+        }
 
     def create(self, request, *args, **kwargs):
-        retdict = save("create", request.data)
-        if retdict['status'] == 1 and retdict.has_key('instance'):
-            retdict.pop('instance')
-            jenkins_job.apply_async((request.data),
+        retdict = self.save_utils('create', self._format(request))
+        if retdict['status'] == 1:
+            row_id = retdict.pop('instance').id
+            tasks.build.apply_async((request.data, row_id),
                 retry=True,
                 retry_policy={
                     'max_retries': 3,

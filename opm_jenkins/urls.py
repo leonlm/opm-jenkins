@@ -5,8 +5,7 @@ from views import *
 
 
 router = routers.DefaultRouter()
-router.register(r'job', JenkinsJobViewSet, base_name='jenkins_job')
-
+router.register(r'build', JenkinsBuildLogViewSet, base_name='jenkins_build_log')
 
 urlpatterns = [
     url(r'', include(router.urls)),

@@ -24,20 +24,13 @@ Add ``'opm_jenkins'`` to your ``INSTALLED_APPS`` list.
 
 Add ``settings.py``
 
-- ``JENKINS_JOB``
+- ``JENKINS``
 
-JENKINS_JOB = {
-    'job_name': 'job_name'
-    
+JENKINS = {
+    'JENKINS_URL': "http://server_ip:port",
+    'USER_ID': "username",
+    'API_TOKEN': "Api Token"
 }
-
-- ``USER_ID``
-
-USER_ID = 'username'
-
-- ``API_TOKEN``
-
-API_TOKEN = 'Api Token'
 
 
 
@@ -48,3 +41,8 @@ Settings
 Changelog
 ---------
 
+v0.2
+    1. Update
+
+v0.1
+    1. Initial version
