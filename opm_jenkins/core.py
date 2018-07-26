@@ -4,11 +4,12 @@ from django.conf import settings
 from jenkinsapi.jenkins import Jenkins
 import json
 import time
+import uuid
 import ast
 import utils
 
 class JenkinsApi(utils.Utils):
-    def __init__(self, job_name, row_id):
+    def __init__(self, job_name, row_id=None):
         self._jenkins = self.get_instance()
         self._job_name = job_name
         self._row_id = row_id
@@ -31,7 +32,6 @@ class JenkinsApi(utils.Utils):
                 time.sleep(2)
         return instance
 
-    @classmethod
     def get_job(self):
         if self._jenkins:
             job = self._jenkins.get_job(self._job_name)
@@ -69,10 +69,14 @@ class JenkinsApi(utils.Utils):
         return result
 
     def build_job(self, params):
-        params['uuid'] = str(int(time.time() * 100))
+        params['uuid'] = str(int(round(time.time()*1000)))  # uuid.uuid1()
         if self._do_method("build_job", params=params):
             number = self._get_buildnumber(params)
-            self._log_start(number, params['uuid'])
+            if self._row_id:
+                self._log_start(number, params['uuid'])
+            else:
+                self._row_id = self._get_row_id(number, params)
+            
             while True:
                 self.update_build(number)
                 if self.is_running():
@@ -147,7 +151,17 @@ class JenkinsApi(utils.Utils):
                 else:
                     status = 'Unknown'
         return status
-        
+
+    def _get_row_id(self, number, params):
+        data = {
+            "job_name": self._job_name,
+            "uuid": params.pop('uuid'),
+            "parameters": json.dumps(params),
+            "number": number,
+            "status": self.get_building_status()
+        }
+        return self.save_utils('create', data)['instance'].id
+
     def _save(self, data):
         return self.save_utils('update', data, id=self._row_id)
 

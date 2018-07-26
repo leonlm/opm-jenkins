@@ -9,7 +9,7 @@ class JenkinsBuildLog(models.Model):
     """
     job_name = models.TextField(default=None, null=True, blank=True)
     parameters = models.TextField(default=None, null=True, blank=True)
-    uuid = models.CharField(max_length=16, default=None, null=True, blank=True)
+    uuid = models.CharField(max_length=128, default=None, null=True, blank=True)
     number = models.IntegerField(default=None, null=True, blank=True)
     status = models.CharField(max_length=16, default='Start', null=True, blank=True)
     took_time = models.CharField(max_length=100, default=None, null=True, blank=True)
