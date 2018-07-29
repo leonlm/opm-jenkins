@@ -12,5 +12,5 @@ def build(request_data, row_id):
 
 @task
 def buildlog(request_data):
-    jenkins = JenkinsApi(request_data['job_name'], row_id)
+    jenkins = JenkinsApi(request_data['job_name'])
     jenkins.build_job(request_data['parameters'])

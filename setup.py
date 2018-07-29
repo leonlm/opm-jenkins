@@ -39,7 +39,7 @@ package = 'opm_jenkins'
     
 setup(
     name='opm_jenkins',
-    version='0.1.0',
+    version='0.2.1',
     author='Leon',
     author_email='leon.limiao@gmail.com',
     description='Plug and play continuous integration with django restframework and jenkins',
