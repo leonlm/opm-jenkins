@@ -16,6 +16,7 @@ class JenkinsApi(utils.Utils):
         self._job = self.get_job()
         self._build = None
         self.last_build_number = self.get_last_completed_buildnumber()
+        self.status = 'Unknown'
 
     @classmethod
     def get_instance(self):
@@ -26,17 +27,21 @@ class JenkinsApi(utils.Utils):
                     username=settings.JENKINS['USER_ID'], 
                     password=settings.JENKINS['API_TOKEN']
                 )
+                self.status = 'JENKINS'
                 break
             except:
                 instance = None
+                self.status = 'ERROR_JENKINS'
                 time.sleep(2)
         return instance
 
     def get_job(self):
         if self._jenkins:
             job = self._jenkins.get_job(self._job_name)
+            self.status = 'JOB'
         else:
             job = None
+            self.status = 'ERROR_JOB'
         return job
 
     def _do_method(self, func, **kwargs):
@@ -85,7 +90,7 @@ class JenkinsApi(utils.Utils):
                 else:
                     break
             self._log_stop()
-        return True
+        return self.status
 
     def _get_buildnumber(self, params):
         lastest_build_number = self.get_last_buildnumber()
@@ -150,7 +155,8 @@ class JenkinsApi(utils.Utils):
                     status = 'Failure'
                 else:
                     status = 'Unknown'
-        return status
+        self.status = status
+        return self.status
 
     def _get_row_id(self, number, params):
         data = {
