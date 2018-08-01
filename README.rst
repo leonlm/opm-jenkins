@@ -40,6 +40,8 @@ Settings
 
 Changelog
 ---------
+v1.0.0
+    1. Fix
 
 v0.2
     1. Update

@@ -77,37 +77,58 @@ class JenkinsApi(utils.Utils):
         params['uuid'] = str(int(round(time.time()*1000)))  # uuid.uuid1()
         if self._do_method("build_job", params=params):
             number = self._get_buildnumber(params)
-            if self._row_id:
-                self._log_start(number, params['uuid'])
-            else:
-                self._row_id = self._get_row_id(number, params)
-            
-            while True:
-                self.update_build(number)
-                if self.is_running():
-                    time.sleep(2)
-                    self._log_running()
+            if number:
+                if self._row_id:
+                    self._log_start(number, params['uuid'])
                 else:
-                    break
-            self._log_stop()
+                    self._row_id = self._get_row_id(number, params)
+                while True:
+                    self.update_build(number)
+                    if self.is_running():
+                        time.sleep(2)
+                        self._log_running()
+                    else:
+                        break
+                self._log_stop()
+            else:
+                self.status = 'ERROR_NUMBER'
+                self._log_error()
+        else:
+            if self._row_id: self._log_error()
         return self.status
 
     def _get_buildnumber(self, params):
-        lastest_build_number = self.get_last_buildnumber()
-        while True:
-            if lastest_build_number <= self.last_build_number:
+        for i in range(5):
+            buildnumber = None
+            lastest_build_number = self.get_last_buildnumber()
+            while True:
+                if lastest_build_number <= self.last_build_number:
+                    time.sleep(2)
+                    lastest_build_number = self.get_last_buildnumber()
+                else:
+                    break
+            for number in range(self.last_build_number, lastest_build_number + 1):
+                build = self.get_build(number)
+                parameters = self._get_params(build)
+                if parameters.has_key('uuid'):
+                    if parameters['uuid'] == params['uuid']:
+                        self._build = build
+                        buildnumber = number
+                        break
+            if buildnumber:
+                break
+            else:
                 time.sleep(2)
-                lastest_build_number = self.get_last_buildnumber()
+        return buildnumber
+
+    def _get_params(self, build):
+        actions = build._data.get('actions')
+        for elem in actions:
+            if elem.has_key('parameters'):
+                parameters = elem.get('parameters', {})
             else:
                 break
-        buildnumber = None
-        for number in range(self.last_build_number, lastest_build_number + 1):
-            build = self.get_build(number)
-            if build.get_params()['uuid'] == params['uuid']:
-                self._build = build
-                buildnumber = number
-                break
-        return buildnumber
+        return {pair['name']: pair.get('value') for pair in parameters}
 
     def get_last_completed_buildnumber(self):
         return self._do_method("get_last_completed_buildnumber")
@@ -117,11 +138,11 @@ class JenkinsApi(utils.Utils):
 
     def get_build(self, buildnumber):
         return self._do_method("get_build", params=buildnumber)
-        
+
     def update_build(self, number):
         self._build = self.get_build(number)
         return True
-        
+
     def get_status(self):
         return self._do_method("get_status")
 
@@ -180,9 +201,15 @@ class JenkinsApi(utils.Utils):
 
     def _log_running(self):
         return self._save(dict(status=self.get_building_status()))
-    
+
     def _log_stop(self):
         return self._save(dict(
             status = self.get_building_status(),
             took_time = self.get_duration()
+        ))
+
+    def _log_error(self):
+        return self._save(dict(
+            status = self.status,
+            took_time = "0"
         ))
