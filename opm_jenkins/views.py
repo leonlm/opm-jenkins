@@ -4,12 +4,12 @@ from django.shortcuts import render
 import django_filters
 from rest_framework import viewsets
 from django.http.response import JsonResponse
+from utils import Utils
 import json
-import utils
 import tasks
 
 
-class JenkinsBuildLogViewSet(viewsets.ModelViewSet, utils.Utils):
+class JenkinsBuildLogViewSet(viewsets.ModelViewSet, Utils):
     def get_serializer_class(self):
         return self.get_serializer_list()
         
@@ -23,7 +23,7 @@ class JenkinsBuildLogViewSet(viewsets.ModelViewSet, utils.Utils):
         }
 
     def create(self, request, *args, **kwargs):
-        retdict = self.save_utils('create', self._format(request))
+        retdict = Utils.save('create', self._format(request))
         if retdict['status'] == 1:
             row_id = retdict.pop('instance').id
             tasks.build.apply_async((request.data, row_id),

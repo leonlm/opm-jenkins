@@ -14,7 +14,7 @@ class Utils(object):
     def get_model(self):
         return JenkinsBuildLog
 
-    def save_utils(self, method, request_data, **kwargs):
+    def save(self, method, request_data, **kwargs):
         if method == "create":
             serializer = self.get_serializer_cu()(data=request_data)
         else:
@@ -31,5 +31,5 @@ class Utils(object):
             retdict = {"status": 0, "data": "", "msg": "ERROR,"+json.dumps(serializer.errors)}
         return retdict
 
-    def filter_utils(self, **kwargs):
+    def filter(self, **kwargs):
         return self.get_serializer_list()(self.get_model().objects.filter(**kwargs), many=True).data

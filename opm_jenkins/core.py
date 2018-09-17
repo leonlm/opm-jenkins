@@ -2,11 +2,11 @@
 from __future__ import unicode_literals
 from django.conf import settings
 from jenkinsapi.jenkins import Jenkins
+import utils
 import json
 import time
 import uuid
-import ast
-import utils
+
 
 class JenkinsApi(utils.Utils):
     def __init__(self, job_name, row_id=None):
@@ -73,7 +73,7 @@ class JenkinsApi(utils.Utils):
             result = None
         return result
 
-    def build_job(self, params):
+    def build_job(self, params, callback=None):
         params['uuid'] = str(int(round(time.time()*1000)))  # uuid.uuid1()
         if self._do_method("build_job", params=params):
             number = self._get_buildnumber(params)
@@ -81,7 +81,7 @@ class JenkinsApi(utils.Utils):
                 if self._row_id:
                     self._log_start(number, params['uuid'])
                 else:
-                    self._row_id = self._get_row_id(number, params)
+                    self._row_id = self._get_row_id(number, params, callback)
                 while True:
                     self.update_build(number)
                     if self.is_running():
@@ -179,18 +179,19 @@ class JenkinsApi(utils.Utils):
         self.status = status
         return self.status
 
-    def _get_row_id(self, number, params):
+    def _get_row_id(self, number, params, callback):
         data = {
             "job_name": self._job_name,
             "uuid": params.pop('uuid'),
+            "callback": callback,
             "parameters": json.dumps(params),
             "number": number,
             "status": self.get_building_status()
         }
-        return self.save_utils('create', data)['instance'].id
+        return self.save('create', data)['instance'].id
 
     def _save(self, data):
-        return self.save_utils('update', data, id=self._row_id)
+        return self.save('update', data, id=self._row_id)
 
     def _log_start(self, number, uuid):
         return self._save(dict(
