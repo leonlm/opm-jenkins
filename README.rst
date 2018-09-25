@@ -40,6 +40,9 @@ Settings
 
 Changelog
 ---------
+v1.1.0
+    1. Add other model
+
 v1.0.1
     1. Update
     

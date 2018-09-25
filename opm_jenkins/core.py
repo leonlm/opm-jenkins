@@ -9,7 +9,7 @@ import uuid
 
 
 class JenkinsApi(utils.Utils):
-    def __init__(self, job_name, row_id=None):
+    def __init__(self, job_name, row_id=None, save_func=None, import_str=None, class_name=None):
         self._jenkins = self.get_instance()
         self._job_name = job_name
         self._row_id = row_id
@@ -17,6 +17,7 @@ class JenkinsApi(utils.Utils):
         self._build = None
         self.last_build_number = self.get_last_completed_buildnumber()
         self.status = 'Unknown'
+        self.save_func = self._get_save_func(save_func, import_str, class_name)
 
     @classmethod
     def get_instance(self):
@@ -130,6 +131,15 @@ class JenkinsApi(utils.Utils):
                 break
         return {pair['name']: pair.get('value') for pair in parameters}
 
+    def _get_save_func(self, save_func, import_str, class_name):
+        if save_func:
+            module = __import__(import_str, fromlist=(class_name,))
+            import_class = getattr(module, class_name)
+            save = getattr(import_class(), save_func, None)
+        else:
+            save = self.save
+        return save
+
     def get_last_completed_buildnumber(self):
         return self._do_method("get_last_completed_buildnumber")
 
@@ -160,6 +170,7 @@ class JenkinsApi(utils.Utils):
 
     def get_result_url(self):
         return self._do_method("get_result_url")
+
     def get_console(self):
         return self._do_method("get_console")
 
@@ -188,10 +199,10 @@ class JenkinsApi(utils.Utils):
             "number": number,
             "status": self.get_building_status()
         }
-        return self.save('create', data)['instance'].id
+        return self.save_func('create', data)['instance'].id
 
     def _save(self, data):
-        return self.save('update', data, id=self._row_id)
+        return self.save_func('update', data, id=self._row_id)
 
     def _log_start(self, number, uuid):
         return self._save(dict(

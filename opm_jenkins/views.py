@@ -23,7 +23,7 @@ class JenkinsBuildLogViewSet(viewsets.ModelViewSet, Utils):
         }
 
     def create(self, request, *args, **kwargs):
-        retdict = Utils.save('create', self._format(request))
+        retdict = Utils.save(self, 'create', self._format(request))
         if retdict['status'] == 1:
             row_id = retdict.pop('instance').id
             tasks.build.apply_async((request.data, row_id),
