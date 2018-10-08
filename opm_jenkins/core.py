@@ -170,7 +170,6 @@ class JenkinsApi(utils.Utils):
 
     def get_result_url(self):
         return self._do_method("get_result_url")
-
     def get_console(self):
         return self._do_method("get_console")
 
@@ -199,6 +198,7 @@ class JenkinsApi(utils.Utils):
             "number": number,
             "status": self.get_building_status()
         }
+        data.update(params)
         return self.save_func('create', data)['instance'].id
 
     def _save(self, data):
