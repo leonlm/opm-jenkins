@@ -6,6 +6,7 @@ import utils
 import json
 import time
 import uuid
+from channels import Group
 
 
 class JenkinsApi(utils.Utils):
@@ -170,6 +171,7 @@ class JenkinsApi(utils.Utils):
 
     def get_result_url(self):
         return self._do_method("get_result_url")
+
     def get_console(self):
         return self._do_method("get_console")
 
@@ -185,9 +187,12 @@ class JenkinsApi(utils.Utils):
                 elif self.get_status() == 'FAILURE':
                     status = 'Failure'
                 else:
+                    print "----", self.get_status()
                     status = 'Unknown'
-        self.status = status
-        return self.status
+        return status
+
+    def update_status(self):
+        pass
 
     def _get_row_id(self, number, params, callback):
         data = {
@@ -201,27 +206,45 @@ class JenkinsApi(utils.Utils):
         data.update(params)
         return self.save_func('create', data)['instance'].id
 
+    def _ws_send(self, status):
+        Group(self._job_name + str(self._row_id)).send({'text': json.dumps({"status": status})})
+
     def _save(self, data):
         return self.save_func('update', data, id=self._row_id)
 
     def _log_start(self, number, uuid):
+        status = self.get_building_status()
+        self.status = status
+        self._ws_send(status)
         return self._save(dict(
-            uuid = uuid,
-            number = number,
-            status = self.get_building_status()
+            uuid=uuid,
+            number=number,
+            status=status
         ))
 
     def _log_running(self):
-        return self._save(dict(status=self.get_building_status()))
+        status = self.get_building_status()
+        if self.status == status:
+            pass
+        else:
+            self._ws_send(status)
+            self.status = status
+            self._save(dict(status=status))
 
     def _log_stop(self):
+        status = self.get_building_status()
+        self.status = status
+        self._ws_send(status)
         return self._save(dict(
-            status = self.get_building_status(),
-            took_time = self.get_duration()
+            status=status,
+            took_time=self.get_duration()
         ))
 
     def _log_error(self):
+        status = self.status
+        self._ws_send(status)
         return self._save(dict(
-            status = self.status,
-            took_time = "0"
+            status=status,
+            took_time="0"
         ))
+

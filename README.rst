@@ -40,6 +40,9 @@ Settings
 
 Changelog
 ---------
+v1.2.0
+    1. websocket support
+
 v1.1.1
     1. Update
 

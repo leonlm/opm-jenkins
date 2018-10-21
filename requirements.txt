@@ -1,3 +1,4 @@
 Django<2
 djangorestframework>=3.0.0
 jenkinsapi>=0.3.0
+channel>=0.1.0
