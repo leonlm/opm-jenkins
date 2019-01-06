@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.conf import settings
+from channels import Group
 from jenkinsapi.jenkins import Jenkins
 import utils
 import json
 import time
 import uuid
-from channels import Group
 
 
 class JenkinsApi(utils.Utils):
-    def __init__(self, job_name, row_id=None, save_func=None, import_str=None, class_name=None):
+    def __init__(self, job_name):
         self._jenkins = self.get_instance()
         self._job_name = job_name
-        self._row_id = row_id
         self._job = self.get_job()
         self._build = None
         self.last_build_number = self.get_last_completed_buildnumber()
         self.status = 'Unknown'
-        self.save_func = self._get_save_func(save_func, import_str, class_name)
+        self.row_id = None
+        self.save_func = self.save
 
     @classmethod
     def get_instance(self):
@@ -80,10 +80,10 @@ class JenkinsApi(utils.Utils):
         if self._do_method("build_job", params=params):
             number = self._get_buildnumber(params)
             if number:
-                if self._row_id:
+                if self.row_id:
                     self._log_start(number, params['uuid'])
                 else:
-                    self._row_id = self._get_row_id(number, params, callback)
+                    self.row_id = self._get_row_id(number, params, callback)
                 while True:
                     self.update_build(number)
                     if self.is_running():
@@ -96,7 +96,7 @@ class JenkinsApi(utils.Utils):
                 self.status = 'ERROR_NUMBER'
                 self._log_error()
         else:
-            if self._row_id: self._log_error()
+            if self.row_id: self._log_error()
         return self.status
 
     def _get_buildnumber(self, params):
@@ -132,14 +132,10 @@ class JenkinsApi(utils.Utils):
                 break
         return {pair['name']: pair.get('value') for pair in parameters}
 
-    def _get_save_func(self, save_func, import_str, class_name):
-        if save_func:
-            module = __import__(import_str, fromlist=(class_name,))
-            import_class = getattr(module, class_name)
-            save = getattr(import_class(), save_func, None)
-        else:
-            save = self.save
-        return save
+    def build_job_log(self, params, row_id=None, save_func=None):
+        self.row_id = row_id
+        self.save_func = save_func
+        return self.build_job(params, callback=None)
 
     def get_last_completed_buildnumber(self):
         return self._do_method("get_last_completed_buildnumber")
@@ -187,8 +183,7 @@ class JenkinsApi(utils.Utils):
                 elif self.get_status() == 'FAILURE':
                     status = 'Failure'
                 else:
-                    print "----", self.get_status()
-                    status = 'Unknown'
+                    status = 'Building'
         return status
 
     def update_status(self):
@@ -207,10 +202,10 @@ class JenkinsApi(utils.Utils):
         return self.save_func('create', data)['instance'].id
 
     def _ws_send(self, status):
-        Group(self._job_name + str(self._row_id)).send({'text': json.dumps({"status": status})})
+        Group(self._job_name + str(self.row_id)).send({'text': json.dumps({"status": status})})
 
     def _save(self, data):
-        return self.save_func('update', data, id=self._row_id)
+        return self.save_func('update', data, id=self.row_id)
 
     def _log_start(self, number, uuid):
         status = self.get_building_status()

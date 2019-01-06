@@ -40,6 +40,9 @@ Settings
 
 Changelog
 ---------
+v1.2.1
+    1. support private table
+
 v1.2.0
     1. websocket support
 
