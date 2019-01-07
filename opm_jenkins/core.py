@@ -132,10 +132,14 @@ class JenkinsApi(utils.Utils):
                 break
         return {pair['name']: pair.get('value') for pair in parameters}
 
-    def build_job_log(self, params, row_id=None, save_func=None):
+    def build_job_log(self, params, row_id, save_func, import_str, class_name):
         self.row_id = row_id
-        self.save_func = save_func
+        self.save_func = self._get_save_func(save_func, import_str, class_name)
         return self.build_job(params, callback=None)
+
+    def _get_save_func(self, save_func, import_str, class_name):
+        module = __import__(import_str, fromlist=(class_name,))
+        return getattr(getattr(module, class_name)(), save_func, None)
 
     def get_last_completed_buildnumber(self):
         return self._do_method("get_last_completed_buildnumber")

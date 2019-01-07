@@ -40,6 +40,9 @@ Settings
 
 Changelog
 ---------
+v1.2.2
+    1. update
+
 v1.2.1
     1. support private table
 
