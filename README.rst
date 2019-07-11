@@ -40,6 +40,11 @@ Settings
 
 Changelog
 ---------
+
+v1.3.0
+    1. models field change
+    2. core improvements
+
 v1.2.2
     1. update
 
