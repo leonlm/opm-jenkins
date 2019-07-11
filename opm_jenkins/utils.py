@@ -26,7 +26,7 @@ class Utils(object):
 
         if serializer.is_valid():
             instance_save = serializer.save()
-            retdict = {'status': 1, 'data': serializer.data, "msg": "SUCCESS", "instance": instance_save}
+            retdict = {"status": 1, "data": serializer.data, "msg": "SUCCESS", "instance": instance_save}
         else:
             retdict = {"status": 0, "data": "", "msg": "ERROR,"+json.dumps(serializer.errors)}
         return retdict

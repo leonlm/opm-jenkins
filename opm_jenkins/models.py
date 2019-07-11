@@ -12,7 +12,7 @@ class JenkinsBuildLog(models.Model):
     uuid = models.CharField(max_length=128, default=None, null=True, blank=True)
     number = models.IntegerField(default=None, null=True, blank=True)
     status = models.CharField(max_length=16, default='Start', null=True, blank=True)
-    took_time = models.CharField(max_length=100, default=None, null=True, blank=True)
+    duration = models.CharField(max_length=100, default=None, null=True, blank=True)
     start_time = models.DateTimeField(auto_now_add=True)
     callback = models.TextField(default=None, null=True, blank=True)
     # console = models.TextField(default=None, null=True, blank=True)

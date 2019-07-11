@@ -7,6 +7,7 @@ import utils
 import json
 import time
 import uuid
+import datetime
 
 
 class JenkinsApi(utils.Utils):
@@ -18,7 +19,7 @@ class JenkinsApi(utils.Utils):
         self.last_build_number = self.get_last_completed_buildnumber()
         self.status = 'Unknown'
         self.row_id = None
-        self.save_func = self.save
+        self.save_func = None
 
     @classmethod
     def get_instance(self):
@@ -78,11 +79,13 @@ class JenkinsApi(utils.Utils):
     def build_job(self, params, callback=None):
         params['uuid'] = str(int(round(time.time()*1000)))  # uuid.uuid1()
         if self._do_method("build_job", params=params):
+            self._job = self.get_job()
             number = self._get_buildnumber(params)
             if number:
                 if self.row_id:
                     self._log_start(number, params['uuid'])
                 else:
+                    self.save_func = self.save
                     self.row_id = self._get_row_id(number, params, callback)
                 while True:
                     self.update_build(number)
@@ -90,8 +93,12 @@ class JenkinsApi(utils.Utils):
                         time.sleep(2)
                         self._log_running()
                     else:
-                        break
-                self._log_stop()
+                        time.sleep(3)
+                        if self.is_running():
+                            pass
+                        else:
+                            self._log_stop()
+                            break
             else:
                 self.status = 'ERROR_NUMBER'
                 self._log_error()
@@ -102,13 +109,10 @@ class JenkinsApi(utils.Utils):
     def _get_buildnumber(self, params):
         for i in range(5):
             buildnumber = None
-            lastest_build_number = self.get_last_buildnumber()
             while True:
-                if lastest_build_number <= self.last_build_number:
-                    time.sleep(2)
-                    lastest_build_number = self.get_last_buildnumber()
-                else:
-                    break
+                time.sleep(2)
+                lastest_build_number = self.get_last_buildnumber()
+                if lastest_build_number > self.last_build_number: break
             for number in range(self.last_build_number, lastest_build_number + 1):
                 build = self.get_build(number)
                 parameters = self._get_params(build)
@@ -132,14 +136,21 @@ class JenkinsApi(utils.Utils):
                 break
         return {pair['name']: pair.get('value') for pair in parameters}
 
-    def build_job_log(self, params, row_id, save_func, import_str, class_name):
+    def build_job_log(self, params, row_id, save_func):
         self.row_id = row_id
-        self.save_func = self._get_save_func(save_func, import_str, class_name)
-        return self.build_job(params, callback=None)
+        self.save_func = save_func
+        return self.build_job(params)
 
-    def _get_save_func(self, save_func, import_str, class_name):
-        module = __import__(import_str, fromlist=(class_name,))
-        return getattr(getattr(module, class_name)(), save_func, None)
+    def build_job_log_dynamic(self, params, row_id, func_name, import_name, class_name):
+        return self.build_job_log(
+            params,
+            row_id,
+            self._get_save_func(func_name, import_name, class_name)
+        )
+
+    def _get_save_func(self, func_name, import_name, class_name):
+        module = __import__(import_name, fromlist=(class_name,))
+        return getattr(getattr(module, class_name)(), func_name, None)
 
     def get_last_completed_buildnumber(self):
         return self._do_method("get_last_completed_buildnumber")
@@ -158,7 +169,7 @@ class JenkinsApi(utils.Utils):
         return self._do_method("get_status")
 
     def get_duration(self):
-        return self.get_data()['duration']
+        return str(datetime.timedelta(milliseconds=self.get_data()['duration']))
 
     def is_running(self):
         return self._do_method("is_running")
@@ -176,18 +187,15 @@ class JenkinsApi(utils.Utils):
         return self._do_method("get_console")
 
     def get_building_status(self):
-        if self.is_queued():
-            status = 'Queued'
+        if self.is_running():
+            status = 'Building'
         else:
-            if self.is_running():
-                status = 'Building'
+            if self.get_status() == 'SUCCESS':
+                status = 'Success'
+            elif self.get_status() == 'FAILURE':
+                status = 'Failure'
             else:
-                if self.get_status() == 'SUCCESS':
-                    status = 'Stop'
-                elif self.get_status() == 'FAILURE':
-                    status = 'Failure'
-                else:
-                    status = 'Building'
+                status = 'Building'
         return status
 
     def update_status(self):
@@ -206,7 +214,7 @@ class JenkinsApi(utils.Utils):
         return self.save_func('create', data)['instance'].id
 
     def _ws_send(self, status):
-        Group(self._job_name + str(self.row_id)).send({'text': json.dumps({"status": status})})
+        Group(self._job_name + "_" + str(self.row_id)).send({'text': json.dumps({"status": status})})
 
     def _save(self, data):
         return self.save_func('update', data, id=self.row_id)
@@ -236,7 +244,7 @@ class JenkinsApi(utils.Utils):
         self._ws_send(status)
         return self._save(dict(
             status=status,
-            took_time=self.get_duration()
+            duration=self.get_duration()
         ))
 
     def _log_error(self):
@@ -244,6 +252,6 @@ class JenkinsApi(utils.Utils):
         self._ws_send(status)
         return self._save(dict(
             status=status,
-            took_time="0"
+            duration="0"
         ))
 

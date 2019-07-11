@@ -5,8 +5,8 @@ from .core import JenkinsApi
 
 
 @task
-def build(request_data, row_id):
-    jenkins = JenkinsApi(request_data['job_name'], row_id=row_id)
+def build(request_data):
+    jenkins = JenkinsApi(request_data['job_name'])
     jenkins.build_job(request_data['parameters'])
 
 

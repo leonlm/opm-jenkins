@@ -16,20 +16,11 @@ class JenkinsBuildLogViewSet(viewsets.ModelViewSet, Utils):
     def get_queryset(self):
         return self.get_model().objects.all()
 
-    def _format(self, request):
-        return {
-            'job_name': request.data['job_name'],
-            'parameters': json.dumps(request.data['parameters'])
-        }
-
     def create(self, request, *args, **kwargs):
-        retdict = Utils.save(self, 'create', self._format(request))
-        if retdict['status'] == 1:
-            row_id = retdict.pop('instance').id
-            tasks.build.apply_async((request.data, row_id),
-                retry=True,
-                retry_policy={
-                    'max_retries': 3,
-                    'interval_start': 1,
-            })
-        return JsonResponse(retdict, status=200)
+        tasks.build.apply_async((request.data),
+            retry=True,
+            retry_policy={
+                'max_retries': 3,
+                'interval_start': 1,
+        })
+        return JsonResponse({"status": 1, "data": "", "msg": "SUCCESS"}, status=200)
